@@ -15,23 +15,30 @@ public class SMSReceiver extends BroadcastReceiver
     public void onReceive(Context context, Intent intent)
     {
 //---get the SMS message passed in---
-        int i;
         Bundle bundle = intent.getExtras();
         SmsMessage[] msgs = null;
         String str = "SMS from ";
         if (bundle != null)
         {
 //---retrieve the SMS message received---
-            msgs = Telephony.Sms.Intents.getMessagesFromIntent(intent);
-            for (i=0; i<msgs.length; i++){
+            Object[] pdus = (Object[]) bundle.get("pdus");
+            msgs = new SmsMessage[pdus.length];
+            for (int i=0; i<msgs.length; i++){
+                msgs[i] = SmsMessage.createFromPdu((byte[])pdus[i]);
+                if (i==0) {
+//---get the sender address/phone number---
+                    str += msgs[i].getOriginatingAddress();
+                    str += ": ";
+                }
+//---get the message body---
                 str += msgs[i].getMessageBody().toString();
             }
-//---get the message body---
-            str += msgs[i].getMessageBody().toString();
-        }
 //---display the new SMS message---
-        Toast.makeText(context, str, Toast.LENGTH_SHORT).show();
-        Log.d("SMSReceiver", str);
+            Toast.makeText(context, str, Toast.LENGTH_SHORT).show();
+            Log.d("SMSReceiver", str);
+//---stop the SMS message from being broadcasted---
+            this.abortBroadcast();
+        }
     }
 }
 
